@@ -464,35 +464,58 @@
         // 主題定義 (包含底色 base)
         const themes = {
             night: {
-                base: '#050505', // 純黑
+                // 原本的夜間模式
+                base: '#050505', 
                 c1: 'rgba(76, 29, 149, 0.15)',
                 c2: 'rgba(14, 165, 233, 0.15)',
                 accent: 'rgba(56, 189, 248, 0.3)', 
                 icon: 'fa-moon'
             },
+            morning: {
+                // 早晨 (Fresh / Cool): 極深青綠色 (Teal 950)
+                // 光暈: 柔和的日出粉 + 淡青
+                base: '#042f2e', 
+                c1: 'rgba(251, 207, 232, 0.15)', // Light Pink
+                c2: 'rgba(20, 184, 166, 0.15)', // Teal
+                accent: 'rgba(253, 186, 116, 0.4)', // Soft Orange
+                icon: 'fa-sun'
+            },
+            noon: {
+                // 中午 (Bright / Contrast): 深邃蔚藍色 (Sky 950)
+                // 光暈: 透亮白 + 強烈金黃
+                base: '#082f49', 
+                c1: 'rgba(255, 255, 255, 0.1)', // White glow
+                c2: 'rgba(234, 179, 8, 0.2)',  // Gold
+                accent: 'rgba(250, 204, 21, 0.5)', // Yellow
+                icon: 'fa-sun'
+            },
             clear_day: {
-                base: '#082f49', // 深天藍 (Sky 950)
+                // 一般晴天/下午: 深天藍
+                base: '#082f49', 
                 c1: 'rgba(14, 165, 233, 0.2)', 
                 c2: 'rgba(234, 179, 8, 0.15)',  
                 accent: 'rgba(250, 204, 21, 0.4)', 
                 icon: 'fa-sun'
             },
             cloudy: {
-                base: '#0f172a', // 深 Slate (Slate 900)
+                // 陰天
+                base: '#0f172a', 
                 c1: 'rgba(71, 85, 105, 0.2)',  
                 c2: 'rgba(148, 163, 184, 0.15)', 
                 accent: 'rgba(203, 213, 225, 0.3)', 
                 icon: 'fa-cloud'
             },
             rain: {
-                base: '#020617', // 深 Slate (Slate 950)
+                // 雨天
+                base: '#020617', 
                 c1: 'rgba(30, 41, 59, 0.25)',  
                 c2: 'rgba(59, 130, 246, 0.15)', 
                 accent: 'rgba(96, 165, 250, 0.3)', 
                 icon: 'fa-cloud-rain'
             },
             dusk: {
-                base: '#2e1065', // 深紫 (Violet 950)
+                // 黃昏
+                base: '#2e1065', 
                 c1: 'rgba(124, 58, 237, 0.2)', 
                 c2: 'rgba(234, 88, 12, 0.15)', 
                 accent: 'rgba(244, 114, 182, 0.4)', 
@@ -504,7 +527,7 @@
             const theme = themes[themeName];
             if (!theme) return;
 
-            // 更新所有 CSS 變數 (包含 base)
+            // 更新所有 CSS 變數
             root.style.setProperty('--bg-base', theme.base);
             root.style.setProperty('--bg-color-1', theme.c1);
             root.style.setProperty('--bg-color-2', theme.c2);
@@ -521,11 +544,14 @@
             weatherInfo.classList.add('visible');
         }
 
+        // 根據時間判定 (無天氣資料時的後備方案)
         function getTimeBasedTheme() {
             const hour = new Date().getHours();
-            if (hour >= 5 && hour < 7) return 'dusk'; 
-            if (hour >= 7 && hour < 16) return 'clear_day';
-            if (hour >= 16 && hour < 18) return 'dusk'; 
+            if (hour >= 5 && hour < 9) return 'morning'; // 5-9 早晨
+            if (hour >= 9 && hour < 11) return 'clear_day';
+            if (hour >= 11 && hour < 14) return 'noon'; // 11-14 中午
+            if (hour >= 14 && hour < 17) return 'clear_day';
+            if (hour >= 17 && hour < 19) return 'dusk'; 
             return 'night';
         }
 
@@ -545,12 +571,23 @@
                 if (!isDay) {
                     theme = 'night';
                 } else {
-                    if (code === 0 || code === 1) theme = 'clear_day';
-                    else if (code === 2 || code === 3 || code === 45 || code === 48) theme = 'cloudy';
-                    else if (code >= 51) theme = 'rain';
-                    
+                    // 白天邏輯：先看天氣，若是好天氣則細分時間
+                    const isClear = (code === 0 || code === 1);
                     const hour = new Date().getHours();
-                    if (hour >= 16 && hour < 19) theme = 'dusk';
+
+                    if (isClear) {
+                        if (hour >= 5 && hour < 9) theme = 'morning';
+                        else if (hour >= 11 && hour < 14) theme = 'noon';
+                        else if (hour >= 16 && hour < 19) theme = 'dusk';
+                        else theme = 'clear_day';
+                    } else {
+                        // 天氣不好時優先顯示天氣狀況 (除非是極端的黃昏)
+                        if (code === 2 || code === 3 || code === 45 || code === 48) theme = 'cloudy';
+                        else if (code >= 51) theme = 'rain';
+                        
+                        // 即使是雨天，黃昏時分也可以帶點紫色氛圍，這裡選擇簡單處理
+                        if (hour >= 17 && hour < 19 && theme === 'cloudy') theme = 'dusk';
+                    }
                 }
 
                 applyTheme(theme, temp);
@@ -562,10 +599,10 @@
         }
 
         function initWeather() {
-            // 預設先應用時間主題，避免畫面閃爍
+            // 預設
             applyTheme(getTimeBasedTheme());
 
-            // 固定使用高雄市楠梓區的座標 (Lat: 22.728, Lon: 120.327)
+            // 固定使用高雄市楠梓區的座標
             const lat = 22.728;
             const lon = 120.327;
             
