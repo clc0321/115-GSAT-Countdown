@@ -10,16 +10,15 @@
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;800&family=Noto+Sans+TC:wght@300;500;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            /* 手機版尺寸 */
+            /* 尺寸設定 */
             --digit-height: 4.5rem; 
             --digit-width: 2.8rem;
             --font-size: 2.5rem;
 
-            /* 動態變數 (JS 控制) */
-            --bg-base: #050505; /* 網頁基底色 */
-            --bg-color-1: rgba(76, 29, 149, 0.15); /* 光暈 1 */
-            --bg-color-2: rgba(14, 165, 233, 0.15); /* 光暈 2 */
-            --accent-color: #38bdf8; /* 數字高亮色 */
+            /* 動態變數 */
+            --bg-gradient-from: #0f172a;
+            --bg-gradient-to: #1e293b;
+            --accent-color: #38bdf8;
         }
 
         @media (min-width: 640px) {
@@ -40,43 +39,121 @@
 
         body {
             font-family: 'Noto Sans TC', sans-serif;
-            background-color: var(--bg-base); /* 使用變數 */
+            background: linear-gradient(to bottom, var(--bg-gradient-from), var(--bg-gradient-to));
             color: #f8fafc;
             overflow: hidden;
-            transition: background-color 3s ease; /* 平滑過渡 */
+            transition: background 2s ease;
+            position: relative;
         }
 
-        /* 背景光暈 */
-        .ambient-bg {
+        /* --- 背景特效層 (Z-Index: 0) --- */
+        #effects-container {
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: 
-                radial-gradient(circle at 15% 50%, var(--bg-color-1), transparent 25%),
-                radial-gradient(circle at 85% 30%, var(--bg-color-2), transparent 25%);
-            z-index: -1;
-            filter: blur(40px);
-            animation: breathe 10s ease-in-out infinite alternate;
-            transition: background 3s ease;
+            inset: 0;
+            overflow: hidden;
+            pointer-events: none;
+            z-index: 0;
         }
 
-        @keyframes breathe {
-            0% { opacity: 0.5; transform: scale(1); }
-            100% { opacity: 0.8; transform: scale(1.1); }
+        /* --- 前景特效層 (Z-Index: 50, 蓋過 Main) --- */
+        #foreground-effects {
+            position: absolute;
+            inset: 0;
+            overflow: hidden;
+            pointer-events: none;
+            z-index: 50; /* 確保在計時器(z-10)之上 */
         }
 
-        /* 玻璃擬態容器 */
+        /* 星星特效 */
+        .star {
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+            opacity: 0;
+            animation: twinkle var(--duration) ease-in-out infinite;
+            animation-delay: var(--delay);
+        }
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.2; transform: scale(0.8); }
+            50% { opacity: 1; transform: scale(1.2); }
+        }
+
+        /* 雨滴特效 */
+        .rain-drop {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.4);
+            width: 1px;
+            height: var(--height);
+            top: -100px;
+            left: var(--pos);
+            animation: rain-fall 0.8s linear infinite;
+            animation-delay: var(--delay);
+            animation-duration: var(--duration);
+        }
+        @keyframes rain-fall {
+            to { transform: translateY(110vh); }
+        }
+
+        /* 雲層特效 */
+        .cloud {
+            position: absolute;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 70%);
+            width: var(--size);
+            height: var(--size);
+            top: var(--top);
+            left: -20%;
+            border-radius: 50%;
+            filter: blur(20px);
+            animation: cloud-move var(--duration) linear infinite;
+            opacity: 0.6;
+        }
+        @keyframes cloud-move {
+            to { transform: translateX(150vw); }
+        }
+
+        /* 陽光特效 (修正版：僅保留右上方柔和光暈，移除明顯光斑) */
+        .sun-diffuse-glow {
+            position: absolute;
+            top: -25%; /* 讓核心位於右上角外 */
+            right: -10%; 
+            left: auto; /* 移除置中 */
+            transform: none; /* 移除原本的 translateX */
+            width: 90vw; /* 調整大小 */
+            height: 90vw; 
+            /* 增強中心亮度 */
+            background: radial-gradient(circle at center, rgba(255, 255, 255, 0.5) 0%, rgba(255, 250, 210, 0.3) 35%, rgba(255, 255, 255, 0) 70%);
+            filter: blur(60px); /* 增加模糊度，讓光線更柔和 */
+            pointer-events: none;
+            opacity: 0.9;
+            mix-blend-mode: screen; 
+            /* 在右上角微微浮動 */
+            animation: sun-dynamic 12s ease-in-out infinite alternate;
+        }
+        
+        @keyframes sun-dynamic {
+            0% { opacity: 0.8; transform: scale(1) translate(0, 0); }
+            100% { opacity: 1; transform: scale(1.1) translate(-20px, 10px); }
+        }
+
+        /* --- 內容容器 --- */
         .glass-panel {
-            background: rgba(20, 20, 25, 0.6);
+            background: rgba(10, 10, 15, 0.75); 
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.1);
             box-shadow: 
-                0 20px 50px -12px rgba(0, 0, 0, 0.8),
-                inset 0 1px 0 rgba(255, 255, 255, 0.1);
-            transition: box-shadow 0.5s ease, border-color 0.5s ease;
+                0 20px 50px -12px rgba(0, 0, 0, 0.9),
+                inset 0 1px 0 rgba(255, 255, 255, 0.15);
+            transition: all 0.5s ease;
+        }
+
+        main {
+            text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+        }
+
+        /* 標題光暈 */
+        .title-glow {
+            text-shadow: 0 0 15px rgba(56, 189, 248, 0.5), 0 0 30px rgba(56, 189, 248, 0.3);
         }
 
         /* 滾動容器 */
@@ -85,10 +162,10 @@
             width: var(--digit-width);
             overflow: hidden;
             position: relative;
-            background: linear-gradient(180deg, rgba(0,0,0,0.8) 0%, rgba(30,30,35,0.9) 50%, rgba(0,0,0,0.8) 100%);
+            background: linear-gradient(180deg, rgba(0,0,0,0.9) 0%, rgba(30,30,35,0.95) 50%, rgba(0,0,0,0.9) 100%);
             border-radius: 0.35rem;
-            box-shadow: inset 0 2px 5px rgba(0,0,0,0.8);
-            border: 1px solid rgba(255,255,255,0.05);
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.9);
+            border: 1px solid rgba(255,255,255,0.1);
         }
 
         /* 數字條帶 */
@@ -125,12 +202,13 @@
         /* 標籤文字 */
         .label-text {
             font-size: 0.65rem;
-            color: #64748b;
+            color: #94a3b8; 
             margin-top: 0.5rem;
             text-transform: uppercase;
             letter-spacing: 0.05em;
             text-align: center;
-            font-weight: 500;
+            font-weight: 600;
+            text-shadow: 0 1px 2px black;
         }
 
         @media (min-width: 640px) {
@@ -148,10 +226,10 @@
             mask-image: radial-gradient(circle at center, black 40%, transparent 80%);
             position: absolute;
             inset: 0;
-            z-index: -2;
+            z-index: -1;
         }
 
-        /* 語錄淡入淡出 Class */
+        /* 語錄淡入淡出 */
         .fade-in {
             opacity: 1;
             transform: translateY(0);
@@ -162,30 +240,39 @@
         }
         #quote {
             transition: opacity 1s ease-in-out, transform 1s ease-in-out;
+            color: #e2e8f0; 
+            font-weight: 300; 
+            text-shadow: 0 1px 5px rgba(0,0,0,0.7); 
         }
         
         /* 天氣資訊淡入 */
         #weather-info {
             opacity: 0;
             transition: opacity 1s ease;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.9);
         }
         #weather-info.visible {
-            opacity: 0.8;
+            opacity: 0.9;
         }
     </style>
 </head>
 <body class="h-screen w-screen flex flex-col items-center justify-center relative selection:bg-sky-500 selection:text-white">
 
-    <!-- 背景元素 -->
-    <div class="grid-bg"></div>
-    <div class="ambient-bg" id="ambient-bg"></div>
+    <!-- 背景特效層 -->
+    <div id="effects-container"></div>
+    
+    <!-- 前景特效層 (用於光斑, Z-Index 50) -->
+    <div id="foreground-effects"></div>
 
-    <main class="z-10 flex flex-col items-center justify-center w-full max-w-6xl px-2 sm:px-4">
+    <div class="grid-bg"></div>
+
+    <!-- Main 加入 relative 確保 z-index 生效 -->
+    <main class="z-10 relative flex flex-col items-center justify-center w-full max-w-6xl px-2 sm:px-4">
         
         <!-- 標題區域 -->
         <header class="text-center mb-6 sm:mb-10 relative">
-            <div class="absolute -inset-1 blur-xl bg-gradient-to-r from-blue-600 to-cyan-500 opacity-20 rounded-full"></div>
-            <h1 class="relative text-3xl sm:text-4xl md:text-6xl font-bold tracking-wider text-transparent bg-clip-text bg-gradient-to-br from-white to-slate-400">
+            <div class="absolute -inset-1 blur-xl bg-gradient-to-r from-blue-600 to-cyan-500 opacity-30 rounded-full"></div>
+            <h1 class="relative text-3xl sm:text-4xl md:text-6xl font-bold tracking-wider text-white title-glow">
                 115 學科能力測驗
             </h1>
         </header>
@@ -200,7 +287,7 @@
                     <span class="label-text">DAYS</span>
                 </div>
 
-                <div class="text-2xl sm:text-4xl md:text-6xl text-slate-700 font-mono pt-[0.8rem] sm:pt-[1.5rem] md:pt-[2rem] select-none font-thin opacity-50">:</div>
+                <div class="text-2xl sm:text-4xl md:text-6xl text-slate-400 font-mono pt-[0.8rem] sm:pt-[1.5rem] md:pt-[2rem] select-none font-thin opacity-70">:</div>
 
                 <!-- 時 -->
                 <div class="flex flex-col items-center">
@@ -208,7 +295,7 @@
                     <span class="label-text">HOURS</span>
                 </div>
 
-                <div class="text-2xl sm:text-4xl md:text-6xl text-slate-700 font-mono pt-[0.8rem] sm:pt-[1.5rem] md:pt-[2rem] select-none font-thin opacity-50">:</div>
+                <div class="text-2xl sm:text-4xl md:text-6xl text-slate-400 font-mono pt-[0.8rem] sm:pt-[1.5rem] md:pt-[2rem] select-none font-thin opacity-70">:</div>
 
                 <!-- 分 -->
                 <div class="flex flex-col items-center">
@@ -216,7 +303,7 @@
                     <span class="label-text">MINS</span>
                 </div>
 
-                <div class="text-2xl sm:text-4xl md:text-6xl text-slate-700 font-mono pt-[0.8rem] sm:pt-[1.5rem] md:pt-[2rem] select-none font-thin opacity-50">:</div>
+                <div class="text-2xl sm:text-4xl md:text-6xl text-slate-400 font-mono pt-[0.8rem] sm:pt-[1.5rem] md:pt-[2rem] select-none font-thin opacity-70">:</div>
 
                 <!-- 秒 -->
                 <div class="flex flex-col items-center">
@@ -229,23 +316,23 @@
         <!-- 底部區域：時間、天氣與語錄 -->
         <div class="mt-8 w-full flex flex-col items-center gap-3">
             
-            <!-- 時間與天氣列 (並排顯示) -->
+            <!-- 時間與天氣列 -->
             <div class="flex items-baseline justify-center gap-3 sm:gap-5">
                 <!-- 時間 -->
-                <div class="text-slate-400 font-mono tracking-widest text-xl sm:text-3xl font-bold opacity-90">
+                <div class="text-slate-200 font-mono tracking-widest text-xl sm:text-3xl font-bold opacity-90 drop-shadow-md">
                     <span id="current-time"></span>
                 </div>
                 
                 <!-- 極簡天氣資訊 -->
-                <div id="weather-info" class="flex items-center gap-2 text-slate-500 text-sm sm:text-base font-medium">
+                <div id="weather-info" class="flex items-center gap-2 text-slate-300 text-sm sm:text-base font-medium drop-shadow-md">
                     <i id="weather-icon" class="fas fa-moon"></i>
                     <span id="weather-temp">--°</span>
                 </div>
             </div>
 
-            <!-- 語錄 (稍微上移) -->
+            <!-- 語錄 -->
             <div class="h-14 flex items-center justify-center px-4 w-full">
-                <p id="quote" class="text-slate-500/80 italic text-base sm:text-xl md:text-2xl font-light tracking-wide fade-out max-w-4xl leading-relaxed text-center">
+                <p id="quote" class="italic text-base sm:text-xl md:text-2xl tracking-wide fade-out max-w-4xl leading-relaxed text-center">
                     <!-- JS 寫入 -->
                 </p>
             </div>
@@ -253,28 +340,20 @@
     </main>
 
     <script>
-        // 倒數時間目標
+        // --- 1. 倒數計時系統 ---
         const TARGET_DATE = new Date('2026-01-17T09:15:00'); 
-        
         let currentDigitValues = {};
 
         function initTicker(elementId, digits) {
             const container = document.getElementById(elementId);
             container.innerHTML = '';
-            
             for (let i = 0; i < digits; i++) {
                 const column = document.createElement('div');
                 column.className = 'ticker-column';
                 column.id = `${elementId}-${i}`; 
-                
                 const strip = document.createElement('div');
                 strip.className = 'ticker-strip';
-                
-                strip.innerHTML = `
-                    <div class="ticker-digit">0</div>
-                    <div class="ticker-digit">0</div>
-                `;
-                
+                strip.innerHTML = `<div class="ticker-digit">0</div><div class="ticker-digit">0</div>`;
                 currentDigitValues[column.id] = 0; 
                 column.appendChild(strip);
                 container.appendChild(column);
@@ -290,18 +369,14 @@
             let safeValue = value;
             const maxVal = Math.pow(10, padLength) - 1;
             if (safeValue > maxVal) safeValue = maxVal;
-
             const strValue = safeValue.toString().padStart(padLength, '0');
-            
             for (let i = 0; i < padLength; i++) {
                 const colId = `${containerId}-${i}`;
                 const column = document.getElementById(colId);
                 const strip = column.querySelector('.ticker-strip');
                 const digits = strip.querySelectorAll('.ticker-digit');
-                
                 const nextDigit = strValue[i];
                 const prevDigit = currentDigitValues[colId];
-
                 if (parseInt(nextDigit) === prevDigit) {
                     if (digits[1].innerText !== nextDigit) {
                          digits[1].innerText = nextDigit;
@@ -309,19 +384,14 @@
                     }
                     continue;
                 }
-
                 currentDigitValues[colId] = parseInt(nextDigit);
-
                 digits[0].innerText = nextDigit;
                 digits[1].innerText = prevDigit; 
-
                 strip.style.transition = 'none';
                 strip.style.transform = 'translateY(calc(-1 * var(--digit-height)))';
                 void strip.offsetWidth;
-
                 strip.style.transition = 'transform 0.6s cubic-bezier(0.25, 1, 0.5, 1)';
                 strip.style.transform = 'translateY(0)';
-
                 setTimeout(() => {
                     strip.style.transition = 'none';
                     digits[1].innerText = nextDigit; 
@@ -337,72 +407,35 @@
             const date = now.getDate().toString().padStart(2, '0');
             const hours = now.getHours().toString().padStart(2, '0');
             const minutes = now.getMinutes().toString().padStart(2, '0');
-            
-            const timeString = `${year}/${month}/${date} ${hours}:${minutes}`;
-            document.getElementById('current-time').innerText = timeString;
+            document.getElementById('current-time').innerText = `${year}/${month}/${date} ${hours}:${minutes}`;
         }
 
         function updateTimer() {
             const now = new Date();
             const diff = TARGET_DATE - now;
-
             updateCurrentTime();
-
             if (diff <= 0) {
                 document.querySelector('h1').innerText = "考試開始";
                 return;
             }
-
             const days = Math.floor(diff / (1000 * 60 * 60 * 24));
             const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
             const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
             const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-
             updateStrip('days-container', days, 2);
             updateStrip('hours-container', hours, 2);
             updateStrip('minutes-container', minutes, 2);
             updateStrip('seconds-container', seconds, 2);
         }
         
-        function initialRender() {
-            const now = new Date();
-            const diff = TARGET_DATE - now;
-            updateCurrentTime();
-
-            if (diff <= 0) return;
-
-            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-            const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-            const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-
-            const setInitial = (id, val, len) => {
-                const str = val.toString().padStart(len, '0');
-                for(let i=0; i<len; i++) {
-                    const colId = `${id}-${i}`;
-                    const digit = parseInt(str[i]);
-                    currentDigitValues[colId] = digit;
-                    const strip = document.getElementById(colId).querySelector('.ticker-strip');
-                    strip.querySelectorAll('.ticker-digit')[1].innerText = digit; 
-                }
-            };
-
-            setInitial('days-container', days, 2);
-            setInitial('hours-container', hours, 2);
-            setInitial('minutes-container', minutes, 2);
-            setInitial('seconds-container', seconds, 2);
-        }
-
-        initialRender();
         setInterval(updateTimer, 1000);
+        updateTimer();
 
-        // --- 語錄系統邏輯 (動態載入) ---
-        
-        let rawQuotes = []; // 將會從 txt 檔案讀取
+        // --- 2. 語錄系統 (GitHub) ---
         let quotesQueue = [];
         const quoteElement = document.getElementById('quote');
+        let rawQuotes = [];
 
-        // 洗牌演算法
         function shuffleArray(array) {
             for (let i = array.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
@@ -411,78 +444,47 @@
             return array;
         }
 
-        // 取得下一個語錄 (佇列空了會自動重新洗牌)
         function getNextQuote() {
             if (quotesQueue.length === 0) {
-                // 如果 rawQuotes 還是空的 (例如網路問題)，給一個預設值
                 if (rawQuotes.length === 0) return "載入語錄中...";
                 quotesQueue = shuffleArray([...rawQuotes]);
             }
             return quotesQueue.pop();
         }
 
-        // 更新畫面上的語錄
         function updateQuote() {
             quoteElement.classList.remove('fade-in');
             quoteElement.classList.add('fade-out');
-            
             setTimeout(() => {
                 quoteElement.innerText = getNextQuote();
                 quoteElement.classList.remove('fade-out');
                 quoteElement.classList.add('fade-in');
-                
-                // 排程下一次更新
                 scheduleNextQuote();
             }, 1000);
         }
 
-        // 排程邏輯：30~50分鐘後更新
         function scheduleNextQuote() {
             const minTime = 30 * 60 * 1000;
             const maxTime = 50 * 60 * 1000;
             const randomTime = Math.floor(Math.random() * (maxTime - minTime + 1) + minTime);
-            console.log(`Next quote update in ${randomTime / 1000 / 60} minutes.`);
             setTimeout(updateQuote, randomTime);
         }
 
-        // 初始化語錄系統：從 URL 獲取資料
         async function initQuoteSystem() {
             try {
                 const response = await fetch('https://clc0321.github.io/115-GSAT-Countdown/quotes.txt');
-                if (!response.ok) throw new Error('Network response was not ok');
+                if (!response.ok) throw new Error('Network error');
                 const text = await response.text();
-
-                // 解析文字檔：分割行 -> 去除空白 -> 篩選雙引號開頭結尾 -> 去除雙引號
-                rawQuotes = text.split('\n')
-                    .map(line => line.trim())
-                    .filter(line => line.startsWith('"') && line.endsWith('"'))
-                    .map(line => line.slice(1, -1)); // 去頭去尾
-
-                if (rawQuotes.length === 0) {
-                    console.warn("Parsed quotes list is empty, using fallback.");
-                    rawQuotes = ["堅持到底，未來的你會感謝現在拼命的自己。"];
-                }
-
-                // 初始化佇列並顯示第一句
+                rawQuotes = text.split('\n').map(l => l.trim()).filter(l => l.startsWith('"') && l.endsWith('"')).map(l => l.slice(1, -1));
+                if (rawQuotes.length === 0) rawQuotes = ["堅持到底，未來的你會感謝現在拼命的自己。"];
                 quotesQueue = shuffleArray([...rawQuotes]);
-                const firstQuote = getNextQuote();
-                quoteElement.innerText = firstQuote;
-                
-                // 顯示特效
+                quoteElement.innerText = getNextQuote();
                 quoteElement.classList.remove('fade-out');
                 quoteElement.classList.add('fade-in');
-
-                // 開始循環
                 scheduleNextQuote();
-
-            } catch (error) {
-                console.error("Failed to load quotes:", error);
-                // 發生錯誤時的備用語錄
-                rawQuotes = [
-                    "堅持到底，未來的你會感謝現在拼命的自己。",
-                    "每多讀一分，就離夢想更近一步。",
-                    "乾坤未定，你我皆是黑馬。"
-                ];
+            } catch (e) {
+                console.error(e);
+                rawQuotes = ["堅持到底，未來的你會感謝現在拼命的自己。"];
                 quotesQueue = shuffleArray([...rawQuotes]);
                 quoteElement.innerText = getNextQuote();
                 quoteElement.classList.remove('fade-out');
@@ -490,168 +492,180 @@
                 scheduleNextQuote();
             }
         }
-
-        // 啟動語錄系統
         initQuoteSystem();
 
-
-        // --- 天氣與背景切換邏輯 ---
-
+        // --- 3. 天氣與特效系統 ---
         const root = document.documentElement;
         const weatherInfo = document.getElementById('weather-info');
         const weatherIcon = document.getElementById('weather-icon');
         const weatherTemp = document.getElementById('weather-temp');
+        const effectsContainer = document.getElementById('effects-container');
+        const foregroundEffects = document.getElementById('foreground-effects'); // 新增前景層
 
-        // 主題定義 (包含底色 base)
-        const themes = {
-            night: {
-                // 原本的夜間模式
-                base: '#050505', 
-                c1: 'rgba(76, 29, 149, 0.15)',
-                c2: 'rgba(14, 165, 233, 0.15)',
-                accent: 'rgba(56, 189, 248, 0.3)', 
-                icon: 'fa-moon'
-            },
-            morning: {
-                // 早晨 (Fresh / Cool): 極深青綠色 (Teal 950)
-                // 光暈: 柔和的日出粉 + 淡青
-                base: '#042f2e', 
-                c1: 'rgba(251, 207, 232, 0.15)', // Light Pink
-                c2: 'rgba(20, 184, 166, 0.15)', // Teal
-                accent: 'rgba(253, 186, 116, 0.4)', // Soft Orange
-                icon: 'fa-sun'
-            },
-            noon: {
-                // 中午 (Bright / Contrast): 深邃蔚藍色 (Sky 950)
-                // 光暈: 透亮白 + 強烈金黃
-                base: '#082f49', 
-                c1: 'rgba(255, 255, 255, 0.1)', // White glow
-                c2: 'rgba(234, 179, 8, 0.2)',  // Gold
-                accent: 'rgba(250, 204, 21, 0.5)', // Yellow
-                icon: 'fa-sun'
-            },
-            clear_day: {
-                // 一般晴天/下午: 深天藍
-                base: '#082f49', 
-                c1: 'rgba(14, 165, 233, 0.2)', 
-                c2: 'rgba(234, 179, 8, 0.15)',  
-                accent: 'rgba(250, 204, 21, 0.4)', 
-                icon: 'fa-sun'
-            },
-            cloudy: {
-                // 陰天
-                base: '#0f172a', 
-                c1: 'rgba(71, 85, 105, 0.2)',  
-                c2: 'rgba(148, 163, 184, 0.15)', 
-                accent: 'rgba(203, 213, 225, 0.3)', 
-                icon: 'fa-cloud'
-            },
-            rain: {
-                // 雨天
-                base: '#020617', 
-                c1: 'rgba(30, 41, 59, 0.25)',  
-                c2: 'rgba(59, 130, 246, 0.15)', 
-                accent: 'rgba(96, 165, 250, 0.3)', 
-                icon: 'fa-cloud-rain'
-            },
-            dusk: {
-                // 黃昏
-                base: '#2e1065', 
-                c1: 'rgba(124, 58, 237, 0.2)', 
-                c2: 'rgba(234, 88, 12, 0.15)', 
-                accent: 'rgba(244, 114, 182, 0.4)', 
-                icon: 'fa-cloud-sun'
-            }
-        };
-
-        function applyTheme(themeName, temp = null) {
-            const theme = themes[themeName];
-            if (!theme) return;
-
-            // 更新所有 CSS 變數
-            root.style.setProperty('--bg-base', theme.base);
-            root.style.setProperty('--bg-color-1', theme.c1);
-            root.style.setProperty('--bg-color-2', theme.c2);
-            root.style.setProperty('--accent-color', theme.accent); 
-
-            weatherIcon.className = `fas ${theme.icon}`;
-            
-            if (temp !== null) {
-                weatherTemp.innerText = `${Math.round(temp)}°C`;
-            } else {
-                weatherTemp.innerText = '--°';
-            }
-
-            weatherInfo.classList.add('visible');
+        // 特效生成函數
+        function clearEffects() {
+            effectsContainer.innerHTML = '';
+            foregroundEffects.innerHTML = ''; // 清除前景
         }
 
-        // 根據時間判定 (無天氣資料時的後備方案)
-        function getTimeBasedTheme() {
-            const hour = new Date().getHours();
-            if (hour >= 5 && hour < 9) return 'morning'; // 5-9 早晨
-            if (hour >= 9 && hour < 11) return 'clear_day';
-            if (hour >= 11 && hour < 14) return 'noon'; // 11-14 中午
-            if (hour >= 14 && hour < 17) return 'clear_day';
-            if (hour >= 17 && hour < 19) return 'dusk'; 
+        function createStars() {
+            for (let i = 0; i < 60; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                const size = Math.random() * 2 + 1 + 'px';
+                star.style.width = size;
+                star.style.height = size;
+                star.style.top = Math.random() * 100 + '%';
+                star.style.left = Math.random() * 100 + '%';
+                star.style.setProperty('--duration', Math.random() * 3 + 2 + 's');
+                star.style.setProperty('--delay', Math.random() * 2 + 's');
+                effectsContainer.appendChild(star);
+            }
+        }
+
+        function createRain() {
+            for (let i = 0; i < 60; i++) {
+                const drop = document.createElement('div');
+                drop.className = 'rain-drop';
+                drop.style.setProperty('--pos', Math.random() * 100 + '%');
+                drop.style.setProperty('--delay', Math.random() * 1 + 's');
+                drop.style.setProperty('--duration', Math.random() * 0.5 + 0.5 + 's');
+                drop.style.setProperty('--height', Math.random() * 20 + 10 + 'px');
+                effectsContainer.appendChild(drop);
+            }
+        }
+
+        function createClouds() {
+            for (let i = 0; i < 5; i++) {
+                const cloud = document.createElement('div');
+                cloud.className = 'cloud';
+                cloud.style.setProperty('--top', Math.random() * 40 + '%');
+                cloud.style.setProperty('--size', Math.random() * 200 + 150 + 'px');
+                cloud.style.setProperty('--duration', Math.random() * 20 + 20 + 's');
+                cloud.style.left = Math.random() * 100 + '%';
+                effectsContainer.appendChild(cloud);
+            }
+        }
+
+        function createSun() {
+            const glow = document.createElement('div');
+            glow.className = 'sun-diffuse-glow';
+            effectsContainer.appendChild(glow);
+            
+            // 已移除明顯的光斑 (Lens Flares)
+        }
+
+        // 顏色混合函數 (Hex Blending)
+        function blendColors(color1, color2, percentage) {
+            const f = parseInt(color1.slice(1), 16);
+            const t = parseInt(color2.slice(1), 16);
+            const R1 = f >> 16;
+            const G1 = (f >> 8) & 0x00FF;
+            const B1 = f & 0x0000FF;
+            const R2 = t >> 16;
+            const G2 = (t >> 8) & 0x00FF;
+            const B2 = t & 0x0000FF;
+            
+            const R = Math.round(R1 + (R2 - R1) * percentage);
+            const G = Math.round(G1 + (G2 - G1) * percentage);
+            const B = Math.round(B1 + (B2 - B1) * percentage);
+            
+            return "#" + (0x1000000 + (R < 255 ? R < 1 ? 0 : R : 255) * 0x10000 + 
+                          (G < 255 ? G < 1 ? 0 : G : 255) * 0x100 + 
+                          (B < 255 ? B < 1 ? 0 : B : 255))
+                          .toString(16).slice(1);
+        }
+
+        // 定義主題
+        const themes = {
+            night: { from: '#020617', to: '#1e1b4b', effects: ['stars'], icon: 'fa-moon' },
+            early_morning: { from: '#0f172a', to: '#0d9488', effects: [], icon: 'fa-cloud-moon' },
+            morning: { from: '#0369a1', to: '#38bdf8', effects: ['sun'], icon: 'fa-sun' },
+            noon: { from: '#0284c7', to: '#0ea5e9', effects: ['sun'], icon: 'fa-sun' },
+            afternoon: { from: '#0284c7', to: '#60a5fa', effects: ['sun'], icon: 'fa-sun' },
+            dusk: { from: '#4c1d95', to: '#f97316', effects: [], icon: 'fa-cloud-sun' },
+            evening: { from: '#1e1b4b', to: '#4338ca', effects: ['stars'], icon: 'fa-moon' },
+            rain: { from: '#111827', to: '#374151', effects: ['rain'], icon: 'fa-cloud-rain' },
+            cloudy: { from: '#1e293b', to: '#475569', effects: ['clouds'], icon: 'fa-cloud' }
+        };
+
+        // 渲染主題函數
+        function renderTheme(config, temp) {
+            root.style.setProperty('--bg-gradient-from', config.from);
+            root.style.setProperty('--bg-gradient-to', config.to);
+            weatherIcon.className = `fas ${config.icon}`;
+            weatherTemp.innerText = temp !== null ? `${Math.round(temp)}°C` : '--°';
+            weatherInfo.classList.add('visible');
+            clearEffects();
+            const effects = [...new Set(config.effects)];
+            if (effects.includes('stars')) createStars();
+            if (effects.includes('rain')) createRain();
+            if (effects.includes('clouds')) createClouds();
+            if (effects.includes('sun')) createSun();
+        }
+
+        function applyTheme(themeKey, temp = null) {
+            const theme = themes[themeKey];
+            if (!theme) return;
+            renderTheme(theme, temp);
+        }
+
+        function applyMixedTheme(timeKey, weatherKey, temp = null) {
+            const timeTheme = themes[timeKey];
+            const weatherTheme = themes[weatherKey];
+            if (!timeTheme || !weatherTheme) {
+                if (timeTheme) renderTheme(timeTheme, temp);
+                else if (weatherTheme) renderTheme(weatherTheme, temp);
+                return;
+            }
+            const mixedConfig = {
+                from: blendColors(timeTheme.from, weatherTheme.from, 0.5),
+                to: blendColors(timeTheme.to, weatherTheme.to, 0.5),
+                effects: [...timeTheme.effects, ...weatherTheme.effects],
+                icon: weatherTheme.icon
+            };
+            renderTheme(mixedConfig, temp);
+        }
+
+        function getTimePeriod() {
+            const h = new Date().getHours();
+            if (h >= 4 && h < 6) return 'early_morning';
+            if (h >= 6 && h < 11) return 'morning';
+            if (h >= 11 && h < 14) return 'noon';
+            if (h >= 14 && h < 17) return 'afternoon';
+            if (h >= 17 && h < 18) return 'dusk';
+            if (h >= 18 && h < 19) return 'evening';
             return 'night';
         }
 
-        async function fetchWeather(lat, lon) {
+        async function fetchWeather() {
             try {
+                const lat = 22.728;
+                const lon = 120.327;
                 const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weather_code,is_day&timezone=auto`;
-                const response = await fetch(url);
-                const data = await response.json();
-                const current = data.current;
                 
+                const res = await fetch(url);
+                const data = await res.json();
+                const current = data.current;
                 const code = current.weather_code;
-                const isDay = current.is_day === 1;
                 const temp = current.temperature_2m;
+                
+                const timeKey = getTimePeriod();
+                const isRain = code >= 51; 
+                const isCloudy = (code >= 2 && code <= 48); 
+                
+                if (isRain) applyMixedTheme(timeKey, 'rain', temp);
+                else if (isCloudy) applyMixedTheme(timeKey, 'cloudy', temp);
+                else applyTheme(timeKey, temp);
 
-                let theme = 'night';
-
-                if (!isDay) {
-                    theme = 'night';
-                } else {
-                    // 白天邏輯：先看天氣，若是好天氣則細分時間
-                    const isClear = (code === 0 || code === 1);
-                    const hour = new Date().getHours();
-
-                    if (isClear) {
-                        if (hour >= 5 && hour < 9) theme = 'morning';
-                        else if (hour >= 11 && hour < 14) theme = 'noon';
-                        else if (hour >= 16 && hour < 19) theme = 'dusk';
-                        else theme = 'clear_day';
-                    } else {
-                        // 天氣不好時優先顯示天氣狀況 (除非是極端的黃昏)
-                        if (code === 2 || code === 3 || code === 45 || code === 48) theme = 'cloudy';
-                        else if (code >= 51) theme = 'rain';
-                        
-                        // 即使是雨天，黃昏時分也可以帶點紫色氛圍，這裡選擇簡單處理
-                        if (hour >= 17 && hour < 19 && theme === 'cloudy') theme = 'dusk';
-                    }
-                }
-
-                applyTheme(theme, temp);
-
-            } catch (error) {
-                console.error("Weather fetch failed:", error);
-                applyTheme(getTimeBasedTheme());
+            } catch (e) {
+                console.error("Weather error:", e);
+                applyTheme(getTimePeriod());
             }
         }
 
-        function initWeather() {
-            // 預設
-            applyTheme(getTimeBasedTheme());
-
-            // 固定使用高雄市楠梓區的座標
-            const lat = 22.728;
-            const lon = 120.327;
-            
-            fetchWeather(lat, lon);
-        }
-
-        initWeather();
-        setInterval(initWeather, 30 * 60 * 1000);
+        fetchWeather();
+        setInterval(fetchWeather, 30 * 60 * 1000);
 
     </script>
 </body>
