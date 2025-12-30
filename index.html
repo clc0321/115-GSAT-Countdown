@@ -3,157 +3,162 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>115 學測倒數計時</title>
+    <title>115 學測倒數計時 - 警戒模式</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Weather Icons -->
+    <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;800&family=Noto+Sans+TC:wght@300;500;700&display=swap" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Black+Ops+One&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <!-- DSEG Font (Digital Watch Style) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/dseg@0.46.0/css/dseg.css">
+    
     <style>
         :root {
-            /* 尺寸設定 */
-            --digit-height: 4.5rem; 
-            --digit-width: 2.8rem;
-            --font-size: 2.5rem;
+            /* --- 尺寸設定調整 (手機版縮小) --- */
+            --digit-height: 3.2rem; 
+            --digit-width: 2rem; 
+            --font-size: 1.8rem;
 
-            /* 動態變數 */
-            --bg-gradient-from: #0f172a;
-            --bg-gradient-to: #1e293b;
-            --accent-color: #38bdf8;
+            /* 炸彈風格配色 */
+            --hazard-yellow: #facc15;
+            --hazard-black: #111;
+            --led-red: #ff3333;
+            --led-dim: #4a0000;
+            --panel-bg: #1a1a1a;
+            --border-color: #333;
         }
 
-        @media (min-width: 640px) {
+        @media (min-width: 480px) {
+            :root {
+                --digit-height: 4.5rem; 
+                --digit-width: 3rem; 
+                --font-size: 2.5rem;
+            }
+        }
+
+        @media (min-width: 768px) {
             :root {
                 --digit-height: 7rem;
-                --digit-width: 4.5rem;
+                --digit-width: 5rem;
                 --font-size: 5rem;
             }
         }
 
-        @media (min-width: 1024px) {
+        @media (min-width: 1280px) {
             :root {
                 --digit-height: 9rem;
-                --digit-width: 6rem;
+                --digit-width: 6.5rem;
                 --font-size: 6.5rem;
             }
         }
 
         body {
-            font-family: 'Noto Sans TC', sans-serif;
-            background: linear-gradient(to bottom, var(--bg-gradient-from), var(--bg-gradient-to));
-            color: #f8fafc;
+            font-family: 'Roboto Mono', monospace;
+            background-color: #050505;
+            /* 金屬網格背景 */
+            background-image: 
+                linear-gradient(rgba(0,0,0,0.8), rgba(0,0,0,0.8)),
+                repeating-linear-gradient(0deg, transparent, transparent 1px, #111 1px, #111 2px),
+                repeating-linear-gradient(90deg, transparent, transparent 1px, #111 1px, #111 2px);
+            background-size: 100% 100%, 4px 4px, 4px 4px;
+            color: #e5e7eb;
             overflow: hidden;
-            transition: background 2s ease;
             position: relative;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
         }
 
-        /* --- 背景特效層 (Z-Index: 0) --- */
-        #effects-container {
-            position: absolute;
-            inset: 0;
-            overflow: hidden;
-            pointer-events: none;
-            z-index: 0;
+        /* 警戒線 */
+        .hazard-stripe {
+            height: 20px;
+            width: 100%;
+            background: repeating-linear-gradient(
+                45deg,
+                var(--hazard-black),
+                var(--hazard-black) 20px,
+                var(--hazard-yellow) 20px,
+                var(--hazard-yellow) 40px
+            );
+            box-shadow: 0 0 10px rgba(0,0,0,0.8);
+            z-index: 50;
         }
 
-        /* --- 前景特效層 (Z-Index: 50, 蓋過 Main) --- */
-        #foreground-effects {
-            position: absolute;
-            inset: 0;
-            overflow: hidden;
-            pointer-events: none;
-            z-index: 50; /* 確保在計時器(z-10)之上 */
-        }
-
-        /* 星星特效 */
-        .star {
-            position: absolute;
-            background: white;
-            border-radius: 50%;
-            opacity: 0;
-            animation: twinkle var(--duration) ease-in-out infinite;
-            animation-delay: var(--delay);
-        }
-        @keyframes twinkle {
-            0%, 100% { opacity: 0.2; transform: scale(0.8); }
-            50% { opacity: 1; transform: scale(1.2); }
-        }
-
-        /* 雨滴特效 */
-        .rain-drop {
-            position: absolute;
-            background: rgba(255, 255, 255, 0.4);
-            width: 1px;
-            height: var(--height);
-            top: -100px;
-            left: var(--pos);
-            animation: rain-fall 0.8s linear infinite;
-            animation-delay: var(--delay);
-            animation-duration: var(--duration);
-        }
-        @keyframes rain-fall {
-            to { transform: translateY(110vh); }
-        }
-
-        /* 雲層特效 */
-        .cloud {
-            position: absolute;
-            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 70%);
-            width: var(--size);
-            height: var(--size);
-            top: var(--top);
-            left: -20%;
-            border-radius: 50%;
-            filter: blur(20px);
-            animation: cloud-move var(--duration) linear infinite;
-            opacity: 0.6;
-        }
-        @keyframes cloud-move {
-            to { transform: translateX(150vw); }
-        }
-
-        /* 陽光特效 (修正版：僅保留右上方柔和光暈，移除明顯光斑) */
-        .sun-diffuse-glow {
-            position: absolute;
-            top: -25%; /* 讓核心位於右上角外 */
-            right: -10%; 
-            left: auto; /* 移除置中 */
-            transform: none; /* 移除原本的 translateX */
-            width: 90vw; /* 調整大小 */
-            height: 90vw; 
-            /* 增強中心亮度 */
-            background: radial-gradient(circle at center, rgba(255, 255, 255, 0.5) 0%, rgba(255, 250, 210, 0.3) 35%, rgba(255, 255, 255, 0) 70%);
-            filter: blur(60px); /* 增加模糊度，讓光線更柔和 */
-            pointer-events: none;
-            opacity: 0.9;
-            mix-blend-mode: screen; 
-            /* 在右上角微微浮動 */
-            animation: sun-dynamic 12s ease-in-out infinite alternate;
-        }
-        
-        @keyframes sun-dynamic {
-            0% { opacity: 0.8; transform: scale(1) translate(0, 0); }
-            100% { opacity: 1; transform: scale(1.1) translate(-20px, 10px); }
-        }
-
-        /* --- 內容容器 --- */
-        .glass-panel {
-            background: rgba(10, 10, 15, 0.75); 
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+        /* 主容器 */
+        .device-panel {
+            background: #1c1c1c;
+            border: 4px solid #333;
+            border-radius: 8px;
             box-shadow: 
-                0 20px 50px -12px rgba(0, 0, 0, 0.9),
-                inset 0 1px 0 rgba(255, 255, 255, 0.15);
-            transition: all 0.5s ease;
+                inset 0 0 50px rgba(0,0,0,0.9),
+                0 0 20px rgba(0,0,0,0.8),
+                0 0 0 2px rgba(50,50,50,1);
+            position: relative;
+            padding: 1rem; /* 手機版減少內距 */
+            width: 100%;
+            max-width: 1200px;
+            margin: auto;
+            background-image: radial-gradient(circle at center, #2a2a2a 0%, #111 100%);
+        }
+        @media (min-width: 640px) {
+            .device-panel { padding: 2rem; }
         }
 
-        main {
-            text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+        /* 螺絲釘裝飾 */
+        .screw {
+            position: absolute;
+            width: 10px; height: 10px;
+            background: linear-gradient(135deg, #555, #222);
+            border-radius: 50%;
+            box-shadow: inset 1px 1px 2px rgba(0,0,0,0.8), 1px 1px 1px rgba(255,255,255,0.1);
+        }
+        @media (min-width: 640px) { .screw { width: 12px; height: 12px; } }
+        
+        .screw::after, .screw::before {
+            content: ''; position: absolute; top: 50%; left: 50%; background: #111;
+        }
+        .screw::after { transform: translate(-50%, -50%) rotate(45deg); width: 70%; height: 15%; }
+        .screw::before { transform: translate(-50%, -50%) rotate(-45deg); width: 70%; height: 15%; }
+        .tl { top: 8px; left: 8px; }
+        .tr { top: 8px; right: 8px; }
+        .bl { bottom: 8px; left: 8px; }
+        .br { bottom: 8px; right: 8px; }
+
+        /* 標題樣式 - 還原舊版設定 */
+        h1 {
+            font-family: 'Black Ops One', cursive;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: #e5e5e5;
+            text-shadow: 2px 2px 0px #000;
+            border-bottom: 2px solid #333;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+            /* 移除強制字體大小，交由 Tailwind 控制 */
         }
 
-        /* 標題光暈 */
-        .title-glow {
-            text-shadow: 0 0 15px rgba(56, 189, 248, 0.5), 0 0 30px rgba(56, 189, 248, 0.3);
+        /* 計時器區域 */
+        .timer-display {
+            background: #000;
+            border: 4px inset #444;
+            padding: 10px; /* 手機版減少內距 */
+            border-radius: 4px;
+            box-shadow: inset 0 0 20px rgba(0,0,0,1);
+            position: relative;
+            /* 讓內容超出時可以捲動，防止破版，但我們盡量讓它縮小 */
+            overflow-x: auto; 
+            overflow-y: hidden;
+        }
+        @media (min-width: 640px) { .timer-display { padding: 20px; overflow: hidden; } }
+
+        .timer-display::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: rgba(255, 0, 0, 0.05);
+            pointer-events: none;
+            z-index: 10;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.8);
         }
 
         /* 滾動容器 */
@@ -162,200 +167,269 @@
             width: var(--digit-width);
             overflow: hidden;
             position: relative;
-            background: linear-gradient(180deg, rgba(0,0,0,0.9) 0%, rgba(30,30,35,0.95) 50%, rgba(0,0,0,0.9) 100%);
-            border-radius: 0.35rem;
-            box-shadow: inset 0 2px 5px rgba(0,0,0,0.9);
-            border: 1px solid rgba(255,255,255,0.1);
-        }
-
-        /* 數字條帶 */
-        .ticker-strip {
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 100%;
-            display: flex;
-            flex-direction: column;
-            will-change: transform;
-            transform: translateY(calc(-1 * var(--digit-height)));
-        }
-
-        /* 單個數字 */
-        .ticker-digit {
-            height: var(--digit-height);
+            background: #080808;
+            border-radius: 2px;
+            margin: 0 1px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: var(--font-size);
-            font-weight: 800;
-            color: #e2e8f0;
-            line-height: var(--digit-height);
-            text-shadow: 0 0 15px var(--accent-color);
-            background: linear-gradient(180deg, #fff 30%, #94a3b8 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            flex-shrink: 0; 
-            transition: text-shadow 2s ease;
         }
 
-        /* 標籤文字 */
+        /* 數字樣式 (DSEG7) */
+        .ticker-digit {
+            font-family: 'DSEG7 Classic', sans-serif; 
+            font-size: var(--font-size);
+            font-weight: 700; 
+            color: var(--led-red);
+            line-height: 1;
+            text-shadow: 0 0 5px var(--led-red), 0 0 15px rgba(255, 51, 51, 0.5);
+            background: transparent;
+            -webkit-text-fill-color: var(--led-red);
+            margin: 0;
+            padding: 0;
+        }
+
         .label-text {
-            font-size: 0.65rem;
-            color: #94a3b8; 
-            margin-top: 0.5rem;
+            font-family: 'Black Ops One', cursive;
+            font-size: 0.6rem;
+            color: #666;
+            margin-top: 0.3rem;
             text-transform: uppercase;
             letter-spacing: 0.05em;
-            text-align: center;
-            font-weight: 600;
-            text-shadow: 0 1px 2px black;
+            text-shadow: 0 1px 1px #000;
         }
-
         @media (min-width: 640px) {
-            .label-text {
-                font-size: 0.875rem;
-                letter-spacing: 0.2em;
-            }
-        }
-        
-        /* 網格背景 */
-        .grid-bg {
-            background-size: 40px 40px;
-            background-image: linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-                              linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
-            mask-image: radial-gradient(circle at center, black 40%, transparent 80%);
-            position: absolute;
-            inset: 0;
-            z-index: -1;
+            .label-text { font-size: 0.75rem; margin-top: 0.5rem; letter-spacing: 0.1em; }
         }
 
-        /* 語錄淡入淡出 */
-        .fade-in {
-            opacity: 1;
-            transform: translateY(0);
+        .separator {
+            font-family: 'DSEG7 Classic', sans-serif;
+            font-weight: 700;
+            color: var(--led-dim);
+            text-shadow: 0 0 2px var(--led-red);
+            animation: blink 1s step-end infinite;
+            position: relative;
+            /* 調整分隔符在手機上的對齊 */
+            padding-top: 0.5rem; 
+            font-size: 1.5rem;
+            line-height: var(--digit-height);
         }
-        .fade-out {
-            opacity: 0;
-            transform: translateY(10px);
+        @media (min-width: 640px) {
+            .separator { font-size: 3rem; padding-top: 1rem; }
         }
-        #quote {
-            transition: opacity 1s ease-in-out, transform 1s ease-in-out;
-            color: #e2e8f0; 
-            font-weight: 300; 
-            text-shadow: 0 1px 5px rgba(0,0,0,0.7); 
+        @media (min-width: 1024px) {
+            .separator { font-size: 4rem; padding-top: 1.5rem; }
+        }
+
+        @keyframes blink {
+            50% { color: var(--led-red); text-shadow: 0 0 8px var(--led-red); }
+        }
+
+        .status-light {
+            width: 8px; height: 8px;
+            border-radius: 50%;
+            background-color: #330000;
+            box-shadow: inset 0 0 2px #000;
+            display: inline-block;
+            margin-right: 6px;
+        }
+        @media (min-width: 640px) {
+            .status-light { width: 12px; height: 12px; margin-right: 8px; }
         }
         
-        /* 天氣資訊淡入 */
-        #weather-info {
-            opacity: 0;
-            transition: opacity 1s ease;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.9);
+        .status-light.active {
+            background-color: #ff0000;
+            box-shadow: 0 0 5px #ff0000;
+            animation: pulse-red 1s infinite;
         }
-        #weather-info.visible {
-            opacity: 0.9;
+        @keyframes pulse-red {
+            0% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .info-panel {
+            margin-top: 1.5rem;
+            border-top: 1px dashed #444;
+            padding-top: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+            width: 100%;
+        }
+
+        .data-row {
+            display: flex;
+            flex-wrap: wrap; /* 允許換行 */
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.75rem;
+            color: var(--hazard-yellow);
+            text-shadow: 0 0 2px rgba(250, 204, 21, 0.3);
+        }
+        @media (min-width: 640px) { .data-row { font-size: 0.9rem; } }
+
+        /* 終端機風格語錄框 */
+        #quote-container {
+            background: #000;
+            border: 1px solid #333;
+            padding: 8px;
+            font-family: 'Roboto Mono', monospace;
+            color: #0f0;
+            text-shadow: 0 0 2px #0f0;
+            min-height: 3em;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        #quote-container::before {
+            content: "SYSTEM_MSG: ";
+            position: absolute;
+            top: 2px;
+            left: 4px;
+            font-size: 0.5rem;
+            color: #005500;
+        }
+
+        /* 終端機游標動畫 */
+        @keyframes blink-cursor {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+        
+        /* 預設游標 (靜止時隱藏) */
+        #quote::after {
+            content: '_';
+            display: inline-block;
+            margin-left: 2px;
+            opacity: 0; 
+            color: #0f0;
+            vertical-align: bottom;
+        }
+
+        /* 只有在打字/刪除時才顯示並閃爍 */
+        #quote.typing::after {
+            opacity: 1;
+            animation: blink-cursor 0.8s step-end infinite;
+        }
+
+        .warning-sign {
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+            color: var(--hazard-yellow);
+            font-weight: bold;
+            border: 1px solid var(--hazard-yellow);
+            padding: 2px 6px;
+            background: rgba(250, 204, 21, 0.1);
         }
     </style>
 </head>
-<body class="h-screen w-screen flex flex-col items-center justify-center relative selection:bg-sky-500 selection:text-white">
+<body>
 
-    <!-- 背景特效層 -->
-    <div id="effects-container"></div>
-    
-    <!-- 前景特效層 (用於光斑, Z-Index 50) -->
-    <div id="foreground-effects"></div>
+    <div class="hazard-stripe"></div>
 
-    <div class="grid-bg"></div>
-
-    <!-- Main 加入 relative 確保 z-index 生效 -->
-    <main class="z-10 relative flex flex-col items-center justify-center w-full max-w-6xl px-2 sm:px-4">
+    <main class="flex-grow flex items-center justify-center p-2 sm:p-4">
         
-        <!-- 標題區域 -->
-        <header class="text-center mb-6 sm:mb-10 relative">
-            <div class="absolute -inset-1 blur-xl bg-gradient-to-r from-blue-600 to-cyan-500 opacity-30 rounded-full"></div>
-            <h1 class="relative text-3xl sm:text-4xl md:text-6xl font-bold tracking-wider text-white title-glow">
-                115 學科能力測驗
-            </h1>
-        </header>
+        <div class="device-panel">
+            <div class="screw tl"></div>
+            <div class="screw tr"></div>
+            <div class="screw bl"></div>
+            <div class="screw br"></div>
 
-        <!-- 計時器主體 -->
-        <div class="glass-panel px-4 py-8 sm:p-12 rounded-2xl sm:rounded-3xl w-full max-w-fit mx-auto transition-all duration-500 hover:shadow-[0_0_40px_-10px_rgba(56,189,248,0.2)]">
-            <div class="flex flex-nowrap items-start justify-center gap-2 sm:gap-6 md:gap-8">
+            <header class="text-center relative">
+                <div class="absolute top-0 left-0 flex gap-1 sm:gap-2">
+                    <div class="status-light active"></div>
+                    <div class="text-[0.5rem] sm:text-[0.6rem] text-red-500 tracking-widest">ARMED</div>
+                </div>
                 
-                <!-- 天 -->
-                <div class="flex flex-col items-center">
-                    <div class="flex gap-1 sm:gap-2" id="days-container"></div>
-                    <span class="label-text">DAYS</span>
+                <!-- 標題圖示 -->
+                <!-- 加回字體大小類別：text-2xl sm:text-4xl md:text-5xl -->
+                <h1 class="text-2xl sm:text-4xl md:text-5xl mb-4 sm:mb-8">
+                    <i class="fas fa-triangle-exclamation text-yellow-500 mr-2 text-sm sm:text-2xl"></i>
+                    PROJECT: 115 GSAT
+                    <i class="fas fa-triangle-exclamation text-yellow-500 ml-2 text-sm sm:text-2xl"></i>
+                </h1>
+                
+            </header>
+
+            <div class="timer-display">
+                <!-- 調整 Gap，手機版 gap-1 -->
+                <div class="flex flex-nowrap items-start justify-center gap-1 sm:gap-4 md:gap-6 relative z-20">
+                    
+                    <!-- Days -->
+                    <div class="flex flex-col items-center">
+                        <div class="flex gap-[1px]" id="days-container"></div>
+                        <span class="label-text">DAYS</span>
+                    </div>
+                    <!-- Separator -->
+                    <div class="separator">:</div>
+
+                    <!-- Hours -->
+                    <div class="flex flex-col items-center">
+                        <div class="flex gap-[1px]" id="hours-container"></div>
+                        <span class="label-text">HOURS</span>
+                    </div>
+                    <!-- Separator -->
+                    <div class="separator">:</div>
+
+                    <!-- Minutes -->
+                    <div class="flex flex-col items-center">
+                        <div class="flex gap-[1px]" id="minutes-container"></div>
+                        <span class="label-text">MINUTES</span>
+                    </div>
+                    <!-- Separator -->
+                    <div class="separator">:</div>
+
+                    <!-- Seconds -->
+                    <div class="flex flex-col items-center">
+                        <div class="flex gap-[1px]" id="seconds-container"></div>
+                        <span class="label-text">SECONDS</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="info-panel">
+                <div class="data-row">
+                    <div class="flex items-center gap-2 mb-2 sm:mb-0">
+                        <span class="text-[0.6rem] sm:text-xs text-gray-500">CURRENT:</span>
+                        <span id="current-time" class="font-bold tracking-widest">--/--/-- --:--</span>
+                    </div>
+                    
+                    <div class="warning-sign text-[0.6rem] sm:text-sm">
+                        <i id="weather-icon" class="fas fa-radar"></i>
+                        <span class="text-gray-500">WEATHER:</span>
+                        <span id="weather-temp">SCANNING...</span>
+                    </div>
                 </div>
 
-                <div class="text-2xl sm:text-4xl md:text-6xl text-slate-400 font-mono pt-[0.8rem] sm:pt-[1.5rem] md:pt-[2rem] select-none font-thin opacity-70">:</div>
-
-                <!-- 時 -->
-                <div class="flex flex-col items-center">
-                    <div class="flex gap-1 sm:gap-2" id="hours-container"></div>
-                    <span class="label-text">HOURS</span>
-                </div>
-
-                <div class="text-2xl sm:text-4xl md:text-6xl text-slate-400 font-mono pt-[0.8rem] sm:pt-[1.5rem] md:pt-[2rem] select-none font-thin opacity-70">:</div>
-
-                <!-- 分 -->
-                <div class="flex flex-col items-center">
-                    <div class="flex gap-1 sm:gap-2" id="minutes-container"></div>
-                    <span class="label-text">MINS</span>
-                </div>
-
-                <div class="text-2xl sm:text-4xl md:text-6xl text-slate-400 font-mono pt-[0.8rem] sm:pt-[1.5rem] md:pt-[2rem] select-none font-thin opacity-70">:</div>
-
-                <!-- 秒 -->
-                <div class="flex flex-col items-center">
-                    <div class="flex gap-1 sm:gap-2" id="seconds-container"></div>
-                    <span class="label-text">SECS</span>
+                <div id="quote-container">
+                    <p id="quote" class="text-xs sm:text-sm md:text-base px-2 sm:px-4 leading-tight">
+                    </p>
                 </div>
             </div>
         </div>
-        
-        <!-- 底部區域：時間、天氣與語錄 -->
-        <div class="mt-8 w-full flex flex-col items-center gap-3">
-            
-            <!-- 時間與天氣列 -->
-            <div class="flex items-baseline justify-center gap-3 sm:gap-5">
-                <!-- 時間 -->
-                <div class="text-slate-200 font-mono tracking-widest text-xl sm:text-3xl font-bold opacity-90 drop-shadow-md">
-                    <span id="current-time"></span>
-                </div>
-                
-                <!-- 極簡天氣資訊 -->
-                <div id="weather-info" class="flex items-center gap-2 text-slate-300 text-sm sm:text-base font-medium drop-shadow-md">
-                    <i id="weather-icon" class="fas fa-moon"></i>
-                    <span id="weather-temp">--°</span>
-                </div>
-            </div>
 
-            <!-- 語錄 -->
-            <div class="h-14 flex items-center justify-center px-4 w-full">
-                <p id="quote" class="italic text-base sm:text-xl md:text-2xl tracking-wide fade-out max-w-4xl leading-relaxed text-center">
-                    <!-- JS 寫入 -->
-                </p>
-            </div>
-        </div>
     </main>
+
+    <div class="hazard-stripe"></div>
 
     <script>
         // --- 1. 倒數計時系統 ---
         const TARGET_DATE = new Date('2026-01-17T09:15:00'); 
-        let currentDigitValues = {};
-
+        
         function initTicker(elementId, digits) {
             const container = document.getElementById(elementId);
             container.innerHTML = '';
             for (let i = 0; i < digits; i++) {
                 const column = document.createElement('div');
                 column.className = 'ticker-column';
-                column.id = `${elementId}-${i}`; 
-                const strip = document.createElement('div');
-                strip.className = 'ticker-strip';
-                strip.innerHTML = `<div class="ticker-digit">0</div><div class="ticker-digit">0</div>`;
-                currentDigitValues[column.id] = 0; 
-                column.appendChild(strip);
+                const digitDiv = document.createElement('div');
+                digitDiv.className = 'ticker-digit';
+                digitDiv.innerText = '0';
+                column.appendChild(digitDiv);
                 container.appendChild(column);
             }
         }
@@ -370,33 +444,15 @@
             const maxVal = Math.pow(10, padLength) - 1;
             if (safeValue > maxVal) safeValue = maxVal;
             const strValue = safeValue.toString().padStart(padLength, '0');
+            const container = document.getElementById(containerId);
+            const columns = container.getElementsByClassName('ticker-column');
+
             for (let i = 0; i < padLength; i++) {
-                const colId = `${containerId}-${i}`;
-                const column = document.getElementById(colId);
-                const strip = column.querySelector('.ticker-strip');
-                const digits = strip.querySelectorAll('.ticker-digit');
+                const digitEl = columns[i].querySelector('.ticker-digit');
                 const nextDigit = strValue[i];
-                const prevDigit = currentDigitValues[colId];
-                if (parseInt(nextDigit) === prevDigit) {
-                    if (digits[1].innerText !== nextDigit) {
-                         digits[1].innerText = nextDigit;
-                         currentDigitValues[colId] = parseInt(nextDigit);
-                    }
-                    continue;
+                if (digitEl.innerText !== nextDigit) {
+                    digitEl.innerText = nextDigit;
                 }
-                currentDigitValues[colId] = parseInt(nextDigit);
-                digits[0].innerText = nextDigit;
-                digits[1].innerText = prevDigit; 
-                strip.style.transition = 'none';
-                strip.style.transform = 'translateY(calc(-1 * var(--digit-height)))';
-                void strip.offsetWidth;
-                strip.style.transition = 'transform 0.6s cubic-bezier(0.25, 1, 0.5, 1)';
-                strip.style.transform = 'translateY(0)';
-                setTimeout(() => {
-                    strip.style.transition = 'none';
-                    digits[1].innerText = nextDigit; 
-                    strip.style.transform = 'translateY(calc(-1 * var(--digit-height)))'; 
-                }, 600);
             }
         }
 
@@ -407,7 +463,7 @@
             const date = now.getDate().toString().padStart(2, '0');
             const hours = now.getHours().toString().padStart(2, '0');
             const minutes = now.getMinutes().toString().padStart(2, '0');
-            document.getElementById('current-time').innerText = `${year}/${month}/${date} ${hours}:${minutes}`;
+            document.getElementById('current-time').innerText = `${year}.${month}.${date} ${hours}:${minutes}`;
         }
 
         function updateTimer() {
@@ -415,7 +471,9 @@
             const diff = TARGET_DATE - now;
             updateCurrentTime();
             if (diff <= 0) {
-                document.querySelector('h1').innerText = "考試開始";
+                document.querySelector('h1').innerHTML = "DETONATION / EXAM START";
+                document.querySelector('.status-light').style.backgroundColor = '#00ff00';
+                document.querySelector('.status-light').style.boxShadow = '0 0 10px #00ff00';
                 return;
             }
             const days = Math.floor(diff / (1000 * 60 * 60 * 24));
@@ -427,50 +485,83 @@
             updateStrip('minutes-container', minutes, 2);
             updateStrip('seconds-container', seconds, 2);
         }
-        
         setInterval(updateTimer, 1000);
         updateTimer();
 
-        // --- 2. 語錄系統 (GitHub) ---
-        // 改為純隨機模式，不使用佇列
+        // --- 2. 終端機打字效果語錄系統 ---
         const quoteElement = document.getElementById('quote');
         let rawQuotes = [];
         let lastQuoteIndex = -1;
 
-        // 取得下一個語錄 (隨機抽取，防止連續重複)
-        function getNextQuote() {
-            if (rawQuotes.length === 0) return "載入語錄中...";
-            if (rawQuotes.length === 1) return rawQuotes[0];
+        // 打字機特效 (Typewriter)
+        async function typeWriter(text) {
+            quoteElement.classList.add('typing'); // 開始打字 -> 游標閃爍
+            quoteElement.innerText = "";
+            for (let i = 0; i < text.length; i++) {
+                quoteElement.innerText += text.charAt(i);
+                // 模擬打字速度變化
+                await new Promise(r => setTimeout(r, Math.random() * 50 + 30));
+            }
+            quoteElement.classList.remove('typing'); // 打字結束 -> 游標靜止
+        }
 
+        // 刪除文字特效
+        async function deleteWriter() {
+            quoteElement.classList.add('typing'); // 開始刪除 -> 游標閃爍
+            let text = quoteElement.innerText;
+            while (text.length > 0) {
+                text = text.substring(0, text.length - 1);
+                quoteElement.innerText = text;
+                await new Promise(r => setTimeout(r, 20)); // 快速刪除
+            }
+            quoteElement.classList.remove('typing'); // 刪除結束 -> 游標靜止
+        }
+
+        function getNextQuote() {
+            if (rawQuotes.length === 0) return "NO DATA FOUND";
+            if (rawQuotes.length === 1) return rawQuotes[0];
             let randomIndex;
-            // 迴圈確保不會選到跟上一句一樣的索引
             do {
                 randomIndex = Math.floor(Math.random() * rawQuotes.length);
             } while (randomIndex === lastQuoteIndex);
-
             lastQuoteIndex = randomIndex;
             return rawQuotes[randomIndex];
         }
 
-        function updateQuote() {
-            quoteElement.classList.remove('fade-in');
-            quoteElement.classList.add('fade-out');
-            setTimeout(() => {
-                quoteElement.innerText = getNextQuote();
-                quoteElement.classList.remove('fade-out');
-                quoteElement.classList.add('fade-in');
-                scheduleNextQuote();
-            }, 1000);
-        }
-
-        function scheduleNextQuote() {
+        // 主循環
+        async function runQuoteCycle() {
+            // 1. 取得新語錄
+            const nextQuote = getNextQuote();
+            
+            // 2. 打字顯示
+            await typeWriter(nextQuote);
+            
+            // 3. 停留閱讀時間 (正式版：30-50分鐘)
             const minTime = 30 * 60 * 1000;
             const maxTime = 50 * 60 * 1000;
-            const randomTime = Math.floor(Math.random() * (maxTime - minTime + 1) + minTime);
-            setTimeout(updateQuote, randomTime);
+            const waitTime = Math.floor(Math.random() * (maxTime - minTime + 1) + minTime);
+            
+            // 測試用短時間 (若需要測試可打開)
+            // const waitTime = 5000; 
+
+            console.log(`Message dwell time: ${waitTime/1000/60} mins`);
+            await new Promise(r => setTimeout(r, waitTime));
+
+            // 4. 刪除文字
+            await deleteWriter();
+
+            // 5. 短暫停頓後下一句
+            await new Promise(r => setTimeout(r, 1000));
+            runQuoteCycle();
         }
 
         async function initQuoteSystem() {
+            // 先顯示載入動畫
+            await typeWriter("SYSTEM_INITIALIZING...");
+            await new Promise(r => setTimeout(r, 1000));
+            await deleteWriter();
+            await typeWriter("LOADING_DATABASE...");
+            
             try {
                 const response = await fetch('https://clc0321.github.io/115-GSAT-Countdown/quotes.txt');
                 if (!response.ok) throw new Error('Network error');
@@ -479,189 +570,58 @@
                 
                 if (rawQuotes.length === 0) rawQuotes = ["堅持到底，未來的你會感謝現在拼命的自己。"];
                 
-                // 立即顯示第一句
-                quoteElement.innerText = getNextQuote();
-                quoteElement.classList.remove('fade-out');
-                quoteElement.classList.add('fade-in');
-                scheduleNextQuote();
+                await new Promise(r => setTimeout(r, 800)); // 模擬載入時間
+                await deleteWriter();
+                
+                // 開始循環
+                runQuoteCycle();
+
             } catch (e) {
                 console.error(e);
-                rawQuotes = ["堅持到底，未來的你會感謝現在拼命的自己。"];
-                quoteElement.innerText = getNextQuote();
-                quoteElement.classList.remove('fade-out');
-                quoteElement.classList.add('fade-in');
-                scheduleNextQuote();
+                await deleteWriter();
+                await typeWriter("CONNECTION_FAILED. USING OFFLINE BACKUP.");
+                await new Promise(r => setTimeout(r, 2000));
+                await deleteWriter();
+                rawQuotes = ["堅持到底，未來的你會感謝現在拼命的自己。", "MISION: SURVIVE", "KEEP MOVING FORWARD"];
+                runQuoteCycle();
             }
         }
         initQuoteSystem();
 
-        // --- 3. 天氣與特效系統 ---
-        const root = document.documentElement;
-        const weatherInfo = document.getElementById('weather-info');
+        // --- 3. 天氣系統 ---
         const weatherIcon = document.getElementById('weather-icon');
         const weatherTemp = document.getElementById('weather-temp');
-        const effectsContainer = document.getElementById('effects-container');
-        const foregroundEffects = document.getElementById('foreground-effects'); // 新增前景層
-
-        // 特效生成函數
-        function clearEffects() {
-            effectsContainer.innerHTML = '';
-            foregroundEffects.innerHTML = ''; // 清除前景
-        }
-
-        function createStars() {
-            for (let i = 0; i < 60; i++) {
-                const star = document.createElement('div');
-                star.className = 'star';
-                const size = Math.random() * 2 + 1 + 'px';
-                star.style.width = size;
-                star.style.height = size;
-                star.style.top = Math.random() * 100 + '%';
-                star.style.left = Math.random() * 100 + '%';
-                star.style.setProperty('--duration', Math.random() * 3 + 2 + 's');
-                star.style.setProperty('--delay', Math.random() * 2 + 's');
-                effectsContainer.appendChild(star);
-            }
-        }
-
-        function createRain() {
-            for (let i = 0; i < 60; i++) {
-                const drop = document.createElement('div');
-                drop.className = 'rain-drop';
-                drop.style.setProperty('--pos', Math.random() * 100 + '%');
-                drop.style.setProperty('--delay', Math.random() * 1 + 's');
-                drop.style.setProperty('--duration', Math.random() * 0.5 + 0.5 + 's');
-                drop.style.setProperty('--height', Math.random() * 20 + 10 + 'px');
-                effectsContainer.appendChild(drop);
-            }
-        }
-
-        function createClouds() {
-            for (let i = 0; i < 5; i++) {
-                const cloud = document.createElement('div');
-                cloud.className = 'cloud';
-                cloud.style.setProperty('--top', Math.random() * 40 + '%');
-                cloud.style.setProperty('--size', Math.random() * 200 + 150 + 'px');
-                cloud.style.setProperty('--duration', Math.random() * 20 + 20 + 's');
-                cloud.style.left = Math.random() * 100 + '%';
-                effectsContainer.appendChild(cloud);
-            }
-        }
-
-        function createSun() {
-            const glow = document.createElement('div');
-            glow.className = 'sun-diffuse-glow';
-            effectsContainer.appendChild(glow);
-            
-            // 已移除明顯的光斑 (Lens Flares)
-        }
-
-        // 顏色混合函數 (Hex Blending)
-        function blendColors(color1, color2, percentage) {
-            const f = parseInt(color1.slice(1), 16);
-            const t = parseInt(color2.slice(1), 16);
-            const R1 = f >> 16;
-            const G1 = (f >> 8) & 0x00FF;
-            const B1 = f & 0x0000FF;
-            const R2 = t >> 16;
-            const G2 = (t >> 8) & 0x00FF;
-            const B2 = t & 0x0000FF;
-            
-            const R = Math.round(R1 + (R2 - R1) * percentage);
-            const G = Math.round(G1 + (G2 - G1) * percentage);
-            const B = Math.round(B1 + (B2 - B1) * percentage);
-            
-            return "#" + (0x1000000 + (R < 255 ? R < 1 ? 0 : R : 255) * 0x10000 + 
-                          (G < 255 ? G < 1 ? 0 : G : 255) * 0x100 + 
-                          (B < 255 ? B < 1 ? 0 : B : 255))
-                          .toString(16).slice(1);
-        }
-
-        // 定義主題
-        const themes = {
-            night: { from: '#020617', to: '#1e1b4b', effects: ['stars'], icon: 'fa-moon' },
-            early_morning: { from: '#0f172a', to: '#0d9488', effects: [], icon: 'fa-cloud-moon' },
-            morning: { from: '#0369a1', to: '#38bdf8', effects: ['sun'], icon: 'fa-sun' },
-            noon: { from: '#0284c7', to: '#0ea5e9', effects: ['sun'], icon: 'fa-sun' },
-            afternoon: { from: '#0284c7', to: '#60a5fa', effects: ['sun'], icon: 'fa-sun' },
-            dusk: { from: '#4c1d95', to: '#f97316', effects: [], icon: 'fa-cloud-sun' },
-            evening: { from: '#1e1b4b', to: '#4338ca', effects: ['stars'], icon: 'fa-moon' },
-            rain: { from: '#111827', to: '#374151', effects: ['rain'], icon: 'fa-cloud-rain' },
-            cloudy: { from: '#1e293b', to: '#475569', effects: ['clouds'], icon: 'fa-cloud' }
-        };
-
-        // 渲染主題函數
-        function renderTheme(config, temp) {
-            root.style.setProperty('--bg-gradient-from', config.from);
-            root.style.setProperty('--bg-gradient-to', config.to);
-            weatherIcon.className = `fas ${config.icon}`;
-            weatherTemp.innerText = temp !== null ? `${Math.round(temp)}°C` : '--°';
-            weatherInfo.classList.add('visible');
-            clearEffects();
-            const effects = [...new Set(config.effects)];
-            if (effects.includes('stars')) createStars();
-            if (effects.includes('rain')) createRain();
-            if (effects.includes('clouds')) createClouds();
-            if (effects.includes('sun')) createSun();
-        }
-
-        function applyTheme(themeKey, temp = null) {
-            const theme = themes[themeKey];
-            if (!theme) return;
-            renderTheme(theme, temp);
-        }
-
-        function applyMixedTheme(timeKey, weatherKey, temp = null) {
-            const timeTheme = themes[timeKey];
-            const weatherTheme = themes[weatherKey];
-            if (!timeTheme || !weatherTheme) {
-                if (timeTheme) renderTheme(timeTheme, temp);
-                else if (weatherTheme) renderTheme(weatherTheme, temp);
-                return;
-            }
-            const mixedConfig = {
-                from: blendColors(timeTheme.from, weatherTheme.from, 0.5),
-                to: blendColors(timeTheme.to, weatherTheme.to, 0.5),
-                effects: [...timeTheme.effects, ...weatherTheme.effects],
-                icon: weatherTheme.icon
-            };
-            renderTheme(mixedConfig, temp);
-        }
-
-        function getTimePeriod() {
-            const h = new Date().getHours();
-            if (h >= 4 && h < 6) return 'early_morning';
-            if (h >= 6 && h < 11) return 'morning';
-            if (h >= 11 && h < 14) return 'noon';
-            if (h >= 14 && h < 17) return 'afternoon';
-            if (h >= 17 && h < 18) return 'dusk';
-            if (h >= 18 && h < 19) return 'evening';
-            return 'night';
-        }
 
         async function fetchWeather() {
             try {
                 const lat = 22.728;
                 const lon = 120.327;
                 const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weather_code,is_day&timezone=auto`;
-                
                 const res = await fetch(url);
                 const data = await res.json();
-                const current = data.current;
-                const code = current.weather_code;
-                const temp = current.temperature_2m;
+                const temp = data.current.temperature_2m;
+                const code = data.current.weather_code;
                 
-                const timeKey = getTimePeriod();
-                const isRain = code >= 51; 
-                const isCloudy = (code >= 2 && code <= 48); 
+                let statusText = "STABLE";
+                let iconClass = "fa-circle-check";
                 
-                if (isRain) applyMixedTheme(timeKey, 'rain', temp);
-                else if (isCloudy) applyMixedTheme(timeKey, 'cloudy', temp);
-                else applyTheme(timeKey, temp);
+                if (code >= 51) {
+                    statusText = "RAIN DETECTED";
+                    iconClass = "fa-cloud-showers-heavy";
+                } else if (code >= 2 && code <= 48) {
+                    statusText = "VISIBILITY LOW";
+                    iconClass = "fa-smog";
+                } else if (code === 0 || code === 1) {
+                    statusText = "CLEAR SKY";
+                    iconClass = "fa-sun";
+                }
+
+                weatherIcon.className = `fas ${iconClass}`;
+                weatherTemp.innerText = `${Math.round(temp)}°C // ${statusText}`;
 
             } catch (e) {
-                console.error("Weather error:", e);
-                applyTheme(getTimePeriod());
+                console.error("Sensor error:", e);
+                weatherTemp.innerText = "SENSOR OFFLINE";
             }
         }
 
