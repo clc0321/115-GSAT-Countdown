@@ -7,7 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Google Fonts: 加入 Noto Sans TC 以確保中文字體一致 -->
+    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Black+Ops+One&family=Noto+Sans+TC:wght@400;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
     <!-- DSEG Font (Digital Watch Style) -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/dseg@0.46.0/css/dseg.css">
@@ -53,7 +53,6 @@
         }
 
         body {
-            /* 加入 Noto Sans TC 確保中文顯示一致 */
             font-family: 'Roboto Mono', 'Noto Sans TC', monospace;
             background-color: #050505;
             /* 金屬網格背景 */
@@ -95,7 +94,7 @@
                 0 0 20px rgba(0,0,0,0.8),
                 0 0 0 2px rgba(50,50,50,1);
             position: relative;
-            padding: 1rem; /* 手機版減少內距 */
+            padding: 1rem;
             width: 100%;
             max-width: 1200px;
             margin: auto;
@@ -141,11 +140,10 @@
         .timer-display {
             background: #000;
             border: 4px inset #444;
-            padding: 10px; /* 手機版減少內距 */
+            padding: 10px;
             border-radius: 4px;
             box-shadow: inset 0 0 20px rgba(0,0,0,1);
             position: relative;
-            /* 讓內容超出時可以捲動，防止破版 */
             overflow-x: auto; 
             overflow-y: hidden;
         }
@@ -209,15 +207,16 @@
             text-shadow: 0 0 2px var(--led-red);
             animation: blink 1s step-end infinite;
             position: relative;
-            padding-top: 0.5rem; 
             font-size: 1.5rem;
-            line-height: var(--digit-height);
+            line-height: 1;
+            /* 修改：調整 margin-top 讓冒號更往上，對齊數字中間 */
+            margin-top: -0.4em; 
         }
         @media (min-width: 640px) {
-            .separator { font-size: 3rem; padding-top: 1rem; }
+            .separator { font-size: 3rem; }
         }
         @media (min-width: 1024px) {
-            .separator { font-size: 4rem; padding-top: 1.5rem; }
+            .separator { font-size: 4rem; }
         }
 
         @keyframes blink {
@@ -261,22 +260,21 @@
             flex-wrap: wrap; /* 允許換行 */
             justify-content: space-between;
             align-items: center;
-            font-size: 0.75rem;
+            font-size: 0.9rem;
             color: var(--hazard-yellow);
             text-shadow: 0 0 2px rgba(250, 204, 21, 0.3);
         }
-        @media (min-width: 640px) { .data-row { font-size: 0.9rem; } }
+        @media (min-width: 640px) { .data-row { font-size: 1.1rem; } }
 
         /* 終端機風格語錄框 */
         #quote-container {
             background: #000;
             border: 1px solid #333;
-            padding: 8px;
-            /* 這裡也要加入 Noto Sans TC */
+            padding: 10px;
             font-family: 'Roboto Mono', 'Noto Sans TC', monospace;
             color: #0f0;
             text-shadow: 0 0 2px #0f0;
-            min-height: 3em;
+            min-height: 4em;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -347,16 +345,16 @@
                 
                 <!-- 標題圖示 -->
                 <h1 class="text-2xl sm:text-4xl md:text-5xl mb-4 sm:mb-8">
-                    <i class="fas fa-triangle-exclamation text-yellow-500 mr-2 text-sm sm:text-2xl"></i>
+                    <i class="fas fa-triangle-exclamation text-yellow-500 mr-2"></i>
                     PROJECT: 115 GSAT
-                    <i class="fas fa-triangle-exclamation text-yellow-500 ml-2 text-sm sm:text-2xl"></i>
+                    <i class="fas fa-triangle-exclamation text-yellow-500 ml-2"></i>
                 </h1>
                 
             </header>
 
             <div class="timer-display">
-                <!-- 調整 Gap，手機版 gap-1 -->
-                <div class="flex flex-nowrap items-start justify-center gap-1 sm:gap-4 md:gap-6 relative z-20">
+                <!-- items-center 確保垂直對齊 -->
+                <div class="flex flex-nowrap items-center justify-center gap-1 sm:gap-4 md:gap-6 relative z-20">
                     
                     <!-- Days -->
                     <div class="flex flex-col items-center">
@@ -393,11 +391,12 @@
             <div class="info-panel">
                 <div class="data-row">
                     <div class="flex items-center gap-2 mb-2 sm:mb-0">
-                        <span class="text-[0.6rem] sm:text-xs text-gray-500">CURRENT:</span>
-                        <span id="current-time" class="font-bold tracking-widest">--/--/-- --:--</span>
+                        <span class="text-xs sm:text-sm text-gray-500">CURRENT:</span>
+                        <!-- 修改：改為 text-cyan-400 (青色) -->
+                        <span id="current-time" class="font-bold tracking-widest text-sm sm:text-lg text-cyan-400" style="text-shadow: 0 0 5px rgba(34, 211, 238, 0.6);">--/--/-- --:--</span>
                     </div>
                     
-                    <div class="warning-sign text-[0.6rem] sm:text-sm">
+                    <div class="warning-sign text-xs sm:text-base">
                         <i id="weather-icon" class="fas fa-radar"></i>
                         <span class="text-gray-500">WEATHER:</span>
                         <span id="weather-temp">SCANNING...</span>
@@ -405,7 +404,7 @@
                 </div>
 
                 <div id="quote-container">
-                    <p id="quote" class="text-xs sm:text-sm md:text-base px-2 sm:px-4 leading-tight">
+                    <p id="quote" class="text-sm sm:text-base md:text-xl px-2 sm:px-4 leading-tight">
                     </p>
                 </div>
             </div>
